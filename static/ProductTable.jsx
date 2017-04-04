@@ -26,7 +26,7 @@ export default class ProductTable extends Component {
 
 		oboe( url )
 			.done( function( elem ) {
-				const td = self.state.tableData;
+				const td = this.state.tableData;
 
 				let row = {
 					id: elem.id,
@@ -36,10 +36,10 @@ export default class ProductTable extends Component {
 					price: elem.price
 				};
 
-				self.setState({ 
+				this.setState({ 
 				    tableData: td.concat([ row ])
 				})
-			});
+			}.bind( this ) );
 	}
 
 	constructDataset( source, url ) {
@@ -60,7 +60,7 @@ export default class ProductTable extends Component {
 			});
 		} 
 		else if ( source && source === 'api' ) {
-			this.fetch( `/api/products?limit=100` );
+			this.fetch( `/api/products?limit=20` );
 		}
 		else if ( source && source === 'sortedApi' ) {
 			this.fetch( url );
