@@ -1,6 +1,6 @@
 import React, {Component} from 'react';
-import {Table, Column, Cell} from 'fixed-data-table';
 import oboe from 'oboe';
+import ProductRow from './ProductRow.jsx';
 
 export default class ProductTable extends Component {
 
@@ -9,25 +9,48 @@ export default class ProductTable extends Component {
 
 		this.state = {
 			tableData: [],
-			sortOrder: props.sortOrder
+			sortOrder: props.sortOrder,
+			rowCount: 20,
+			isLoading: false,
+			displayedAds: []
 		};
 
 		this.sortTable = this.sortTable.bind(this);
 		this.baseState = this.state;
 	}
 
-	componentDidMount() {
+	componentWillMount() {
 		this.constructDataset( 'api' );
 	}
 
-	fetch( url ) {
-		this.setState( this.baseState );
-		const self = this;
+	fetch( limit, startAt, sortBy ) {
+		console.log( "FETCH", limit, startAt, sortBy );
+		this.setState( {
+			isLoading: true
+		});
+		let idx = 0;
+		if ( !limit || limit < 10 ) {
+			limit = 10;
+		}
+
+		//Mandating that we'll always have a limit param
+		let url = `api/products?limit=` + limit;
+
+		let rows = [];
+		if ( sortBy ) {
+			url += `&sort=` + sortBy;
+			//Reset state on sort
+			this.setState( this.baseState );
+		}
+
+		if ( startAt ) {
+			url += `&skipBy=` + startAt;
+		}
+
+		console.log( "URL", url );
 
 		oboe( url )
 			.done( function( elem ) {
-				const td = this.state.tableData;
-
 				let row = {
 					id: elem.id,
 					date: elem.date,
@@ -35,54 +58,66 @@ export default class ProductTable extends Component {
 					size: elem.size,
 					price: elem.price
 				};
+				rows.push( row );
+				
+				//Batching the state push
+				if ( rows.length == limit ) {
+					this.addRowsToState( rows );
+				}
+			}.bind( this ) );	
+	}
 
-				this.setState({ 
-				    tableData: td.concat([ row ])
-				})
-			}.bind( this ) );
+	getAdvert() {
+		let idAttempt = Math.floor( Math.random()*1000 );
+		let dup = false;
+		const adIds = this.state.displayedAds;
+		for( let i = 0; i < adIds; i++ ) {
+			if ( idAttempt == adIds[i] ) {
+				dup = true;
+			}
+		}
+
+		if ( dup ) {
+			return this.getAdvert();
+		} else {
+			return idAttempt;
+		}
+	}
+
+	addRowsToState( rows ) {
+		let newRows = this.state.tableData.concat( rows );
+		
+		this.setState({ 
+		    tableData: newRows,
+		    isLoading: false
+		})
+	}
+
+	buildAdRow() {
+		const randomNum = this.getAdvert();
+
+		const adRow = (
+			<tr key={'idx' + randomNum + (Math.random()*1000)}>
+				<td colSpan="5">
+					<img className="ad" src={ "/ad/?r=" + randomNum } />
+				</td>
+			</tr>
+		);
+		
+		return adRow;
 	}
 
 	constructDataset( source, url ) {
-		if ( source && source === 'file') {
-			const dataset = [
-				{"id":"0-d2hxy2j827m24p3ihjhn2ep14i","size":17,"price":23,"face":"( .-. )","date":"Tue Mar 28 2017 21:40:25 GMT-0400 (EDT)"},
-				{"id":"1-8rgymv79ktih13g9e4vv1v2t9","size":37,"price":980,"face":"( .o.)","date":"Fri Mar 24 2017 04:50:40 GMT-0400 (EDT)"},
-				{"id":"2-maff4ksk05a2168rcjcq5mi","size":23,"price":104,"face":"( `·´ )","date":"Fri Mar 24 2017 09:11:45 GMT-0400 (EDT)"},
-				{"id":"3-wgsymur5oymkxhkzu2fbt9","size":17,"price":888,"face":"( ° ͜ ʖ °)","date":"Mon Mar 27 2017 15:26:40 GMT-0400 (EDT)"},
-				{"id":"4-1rle56wc93hj455x9p1i7ctyb9","size":19,"price":751,"face":"( ͡° ͜ʖ ͡°)","date":"Fri Mar 24 2017 07:53:16 GMT-0400 (EDT)"},
-				{"id":"5-o30j9roooyohta163145wb3xr","size":37,"price":513,"face":"( ⚆ _ ⚆ )","date":"Mon Mar 27 2017 17:06:28 GMT-0400 (EDT)"},
-				{"id":"6-rbh3k6h078ndjvzerukmaemi","size":28,"price":497,"face":"( ︶︿︶)","date":"Wed Mar 22 2017 04:20:16 GMT-0400 (EDT)"},
-				{"id":"7-6qy1m84ahde8wky7e2gipe3ik9","size":30,"price":577,"face":"( ﾟヮﾟ)","date":"Thu Mar 30 2017 17:42:32 GMT-0400 (EDT)"},
-			];
-
-			this.setState( {
-				tableData: dataset
-			});
-		} 
-		else if ( source && source === 'api' ) {
-			this.fetch( `/api/products?limit=20` );
+		if ( source && source === 'api' ) {
+			this.fetch( `20` );
 		}
 		else if ( source && source === 'sortedApi' ) {
-			this.fetch( url );
+			this.fetch( null, null, 'price' );
 		}
-	}
-
-	buildFaceCell( size, face ) {
-		return (
-			<td style={{'fontSize': size + 'px'}}>{ face }</td>
-		);
-	}
-
-	buildDateCell( date ) {
-		return (
-			<td> {this.buildFuzzyDate( date ) }</td>
-		);
-	}
-
-	buildCurrencyCell( amt ) {
-		return (
-			<td>{ '$' + amt.toFixed(2).replace(/(\d)(?=(\d{3})+\.)/g, '$1,').toLocaleString() }</td>
-		);
+		else if ( source && source === 'timedPull' ) {
+			const self = this;
+			const time = setInterval( function() { self.fetch(`20`) }, 5000 );
+		}
 	}
 
 	buildRows() {
@@ -90,86 +125,83 @@ export default class ProductTable extends Component {
 		let formattedRow = '';
 
 		this.state.tableData.map( (rowData, idx) => {
-			rows.push( 
-				<tr key={'idx' + idx}>
-					<td>{ rowData.id }</td>
-					<td>{ rowData.size }</td>
-					{ this.buildCurrencyCell( rowData.price ) }
-					{ this.buildFaceCell( rowData.size, rowData.face ) }
-					{ this.buildDateCell( rowData.date ) }
-				</tr>
-			);
+			let currentRow = null;
+			
+			if ( idx > 0 && idx % 20 == 0 ) {
+				currentRow = this.buildAdRow();
+			} 
+			else {
+				currentRow = (
+					<ProductRow
+						key = {'idx' + idx + Math.random()*1000}
+						id = { rowData.id }
+						size = { rowData.size }
+						price = { rowData.price }
+						face = { rowData.face }
+						date = { rowData.date }
+					></ProductRow>
+					//I know I could just close it with />, but my syntax highlighting gets all messy, and I don't feel like screwing with it
+				);
+			}
+			rows.push( currentRow );
 		});
 
 		return rows;
 	}
 
-	buildFuzzyDate( dateStr ) {
-		const date = new Date( dateStr );
-		var delta = Math.round((+new Date - date) / 1000);
-
-		var minute = 60,
-		    hour = minute * 60,
-		    day = hour * 24,
-		    week = day * 7;
-
-		var fuzzy;
-
-		if (delta < 30) {
-		    fuzzy = 'just now';
-		} else if (delta < minute) {
-		    fuzzy = delta + ' seconds ago.';
-		} else if (delta < 2 * minute) {
-		    fuzzy = 'a minute ago.'
-		} else if (delta < hour) {
-		    fuzzy = Math.floor(delta / minute) + ' minutes ago.';
-		} else if (Math.floor(delta / hour) == 1) {
-		    fuzzy = '1 hour ago.'
-		} else if (delta < day) {
-		    fuzzy = Math.floor(delta / hour) + ' hours ago.';
-		} else if (delta < day * 2) {
-		    fuzzy = 'yesterday';
-		} else if ( delta < week ) {
-			fuzzy = Math.floor( delta / day ) + ' days ago.';
-		} else {
-			fuzzy = dateStr;
-		}
-
-		return fuzzy;
-	}
-
 	sortTable( criteria ) {
 		const key = criteria.target.innerHTML;
 		if ( key === 'Price' ) {
-			this.fetch( `/api/products?sort=price` );
+			this.fetch( null, null, `price` );
 			this.buildRows();
 		} else if ( key === 'ID') {
-			this.fetch( `/api/products?sort=id` );
+			this.fetch( null, null, `id` );
 			this.buildRows();
 		} else if ( key === 'Size' ) {
-			this.fetch( `/api/products?sort=size` );
+			this.fetch( null, null, `size` );
 			this.buildRows();
+		}
+	}
+
+	listenScrollEvent( e ) {
+		const element = e.target;
+		const percentDone = element.scrollTop / (element.scrollHeight - 262 );
+		const rowCount = this.state.tableData.length;
+
+		if ( percentDone > 0.6 ) {
+			this.fetch( `20`, rowCount, null );
 		}
 	}
 
 	render() {
-		const data = this.state.tableData;
-
+		let loadingAnim = null;
+		if ( this.state.isLoading ) {
+			loadingAnim = ( <div id="loading"></div> );
+		}
+		else { 
+			loadingAnim = ( <div style={{display:'none'}} id="loading"></div> );
+		}
 		return (
-			<table>
-				<thead>
-					<tr>
-						<th onClick={ this.sortTable }>ID</th>
-						<th onClick={ this.sortTable }>Size</th>
-						<th onClick={ this.sortTable }>Price</th>
-						<th>Face</th>
-						<th>Date</th>
-					</tr>
-				</thead>
-				<tbody>
-					{this.buildRows() }
-				</tbody>
-			</table>
+			<div>
+				{ loadingAnim }
+				<table>
+					<thead className="fixedHeader">
+						<tr>
+							<th className="id column" onClick={ this.sortTable }>ID</th>
+							<th className="size column" onClick={ this.sortTable }>Size</th>
+							<th className="price column" onClick={ this.sortTable }>Price</th>
+							<th className="face column" >Face</th>
+							<th className="date column" >Date</th>
+						</tr>
+					</thead>
+				</table>
+
+				<table onScroll={this.listenScrollEvent.bind(this)}>
+					<tbody className="scrollable">
+						{this.buildRows() }
+					</tbody>
+				</table>
+			</div>
 		);
 	}
 }

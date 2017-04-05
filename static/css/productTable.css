@@ -3,8 +3,10 @@ html {
 }
 
 table {
+	display:block;
 	width: 900px;
 	border-spacing: 0;
+	overflow: auto;
 }
 
 th {
@@ -16,4 +18,59 @@ th {
 td {
 	text-align: center;
 	border: solid 1px #ccc;
+}
+
+tbody tr {
+	height: 50px;
+}
+
+#productContainer {
+	clear: both;
+	border: 1px solid #963;
+	height: 285px;
+	overflow: auto;
+	width: 900px
+}
+
+#loading {
+	position: absolute;
+	height: 400px;
+	width: 400px;
+	top: 420px;
+	left: 350px;
+	background-image: url( '../img/loading.gif');
+	background-repeat: no-repeat;
+}
+
+tbody.scrollable {
+	display: block;
+	height: 262px;
+	overflow: auto;
+	width: 100%
+}
+
+thead.fixedHeader {
+	display: table;
+	overflow: auto;
+	width: 100%
+}
+
+.id.column {
+	width: 30%;
+}
+.size.column {
+	width: 12%;
+}
+.price.column {
+	width: 14%;
+}
+.face.column {
+	width: 20%;
+}
+.date.column {
+	width: 34%;
+}
+
+.spaceMaker {
+	height: 400px;
 }

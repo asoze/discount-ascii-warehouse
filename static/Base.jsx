@@ -13,8 +13,11 @@ export default class Base extends Component {
 
 	render() {
 		return (
-		  	<div>
-			  	<ProductTable sortOrder={this.state.sort} />
+			<div>
+			  	<div id="productContainer">
+				  	<ProductTable sortOrder={this.state.sort} />
+				</div>
+				<div className="spaceMaker"></div>
 			</div>
 		);
 	}
