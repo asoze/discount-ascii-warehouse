@@ -1,6 +1,7 @@
 import React, {Component} from 'react';
 import oboe from 'oboe';
 import ProductRow from './ProductRow.jsx';
+import { debounce } from 'throttle-debounce';
 
 export default class ProductTable extends Component {
 
@@ -12,7 +13,8 @@ export default class ProductTable extends Component {
 			sortOrder: props.sortOrder,
 			rowCount: 20,
 			isLoading: false,
-			displayedAds: []
+			displayedAds: [],
+			isFetching: false
 		};
 
 		this.sortTable = this.sortTable.bind(this);
@@ -23,8 +25,10 @@ export default class ProductTable extends Component {
 		this.constructDataset( 'api' );
 	}
 
+	componentDidMount() {
+	}
+
 	fetch( limit, startAt, sortBy ) {
-		console.log( "FETCH", limit, startAt, sortBy );
 		this.setState( {
 			isLoading: true
 		});
@@ -46,8 +50,6 @@ export default class ProductTable extends Component {
 		if ( startAt ) {
 			url += `&skipBy=` + startAt;
 		}
-
-		console.log( "URL", url );
 
 		oboe( url )
 			.done( function( elem ) {
@@ -163,13 +165,26 @@ export default class ProductTable extends Component {
 		}
 	}
 
-	listenScrollEvent( e ) {
-		const element = e.target;
+	pullMoreRows( element ) {
 		const percentDone = element.scrollTop / (element.scrollHeight - 262 );
 		const rowCount = this.state.tableData.length;
 
 		if ( percentDone > 0.6 ) {
 			this.fetch( `20`, rowCount, null );
+		}
+
+		this.setState( {
+			isFetching : false
+		})
+	}
+
+	listenScrollEvent( e ) {
+		if( !this.state.isFetching ) { //to avoid multiple request
+			this.setState({
+				isFetching : true,
+			});
+			
+			this.pullMoreRows( e.target );
 		}
 	}
 
@@ -196,7 +211,7 @@ export default class ProductTable extends Component {
 					</thead>
 				</table>
 
-				<table onScroll={this.listenScrollEvent.bind(this)}>
+				<table onScroll={ this.listenScrollEvent.bind(this) }>
 					<tbody className="scrollable">
 						{this.buildRows() }
 					</tbody>
