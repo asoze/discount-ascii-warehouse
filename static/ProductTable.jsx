@@ -1,7 +1,6 @@
 import React, {Component} from 'react';
 import oboe from 'oboe';
 import ProductRow from './ProductRow.jsx';
-import { debounce } from 'throttle-debounce';
 
 export default class ProductTable extends Component {
 
@@ -10,11 +9,11 @@ export default class ProductTable extends Component {
 
 		this.state = {
 			tableData: [],
-			sortOrder: props.sortOrder,
 			rowCount: 20,
 			isLoading: false,
-			displayedAds: [],
-			isFetching: false
+			isFetching: false,
+			isSorted: false,
+			sortCrit: null
 		};
 
 		this.sortTable = this.sortTable.bind(this);
@@ -33,26 +32,33 @@ export default class ProductTable extends Component {
 			isLoading: true
 		});
 		let idx = 0;
-		if ( !limit || limit < 10 ) {
-			limit = 10;
+		if ( !limit || limit < 20 ) {
+			limit = 20;
 		}
 
 		//Mandating that we'll always have a limit param
 		let url = `api/products?limit=` + limit;
 
 		let rows = [];
+
 		if ( sortBy ) {
 			url += `&sort=` + sortBy;
 			//Reset state on sort
 			this.setState( this.baseState );
+			this.setState( {
+				isSorted: true,
+				sortCrit: sortBy
+			});
 		}
 
 		if ( startAt ) {
 			url += `&skipBy=` + startAt;
 		}
 
+		let count = this.state.tableData.length;
 		oboe( url )
 			.done( function( elem ) {
+				count++;
 				let row = {
 					id: elem.id,
 					date: elem.date,
@@ -61,12 +67,23 @@ export default class ProductTable extends Component {
 					price: elem.price
 				};
 				rows.push( row );
-				
+
+				if ( count % 20 == 0 ) {
+					const adRow = {
+						id: 'AD',
+						date: null,
+						face: this.getAdvert(),
+						size: null,
+						price: null
+					}
+					rows.push( adRow );
+				}
+
 				//Batching the state push
-				if ( rows.length == limit ) {
+				if ( rows.length > limit ) {
 					this.addRowsToState( rows );
 				}
-			}.bind( this ) );	
+			}.bind( this ) );
 	}
 
 	getAdvert() {
@@ -80,46 +97,31 @@ export default class ProductTable extends Component {
 		}
 
 		if ( dup ) {
-			return this.getAdvert();
+			return Math.floor( Math.random()*1000 );
 		} else {
 			return idAttempt;
 		}
-	}
+	}	
 
 	addRowsToState( rows ) {
 		let newRows = this.state.tableData.concat( rows );
-		
 		this.setState({ 
 		    tableData: newRows,
 		    isLoading: false
 		})
 	}
 
-	buildAdRow() {
-		const randomNum = this.getAdvert();
-
-		const adRow = (
-			<tr key={'idx' + randomNum + (Math.random()*1000)}>
-				<td colSpan="5">
-					<img className="ad" src={ "/ad/?r=" + randomNum } />
-				</td>
-			</tr>
-		);
-		
-		return adRow;
-	}
-
 	constructDataset( source, url ) {
 		if ( source && source === 'api' ) {
 			this.fetch( `20` );
 		}
-		else if ( source && source === 'sortedApi' ) {
-			this.fetch( null, null, 'price' );
-		}
-		else if ( source && source === 'timedPull' ) {
-			const self = this;
-			const time = setInterval( function() { self.fetch(`20`) }, 5000 );
-		}
+		// else if ( source && source === 'sortedApi' ) {
+		// 	this.fetch( null, null, 'price' );
+		// }
+		// else if ( source && source === 'timedPull' ) {
+		// 	const self = this;
+		// 	const time = setInterval( function() { self.fetch(`20`) }, 5000 );
+		// }
 	}
 
 	buildRows() {
@@ -128,23 +130,17 @@ export default class ProductTable extends Component {
 
 		this.state.tableData.map( (rowData, idx) => {
 			let currentRow = null;
-			
-			if ( idx > 0 && idx % 20 == 0 ) {
-				currentRow = this.buildAdRow();
-			} 
-			else {
-				currentRow = (
-					<ProductRow
-						key = {'idx' + idx + Math.random()*1000}
-						id = { rowData.id }
-						size = { rowData.size }
-						price = { rowData.price }
-						face = { rowData.face }
-						date = { rowData.date }
-					></ProductRow>
-					//I know I could just close it with />, but my syntax highlighting gets all messy, and I don't feel like screwing with it
-				);
-			}
+			currentRow = (
+				<ProductRow
+					key = {'idx' + idx + Math.random()*1000}
+					id = { rowData.id }
+					size = { rowData.size }
+					price = { rowData.price }
+					face = { rowData.face }
+					date = { rowData.date }
+				></ProductRow>
+				//I know I could just close it with />, but my syntax highlighting gets all messy, and I don't feel like screwing with it
+			);
 			rows.push( currentRow );
 		});
 
@@ -152,25 +148,34 @@ export default class ProductTable extends Component {
 	}
 
 	sortTable( criteria ) {
+		this.setState( {
+			isLoading: true
+		});
 		const key = criteria.target.innerHTML;
+		let sortTerm = null;
+
 		if ( key === 'Price' ) {
-			this.fetch( null, null, `price` );
-			this.buildRows();
-		} else if ( key === 'ID') {
-			this.fetch( null, null, `id` );
-			this.buildRows();
+			sortTerm = `price`
+		} else if ( key === 'ID' ) {
+			sortTerm = `id`
 		} else if ( key === 'Size' ) {
-			this.fetch( null, null, `size` );
-			this.buildRows();
+			sortTerm = `size`
 		}
+
+		this.fetch( `20`, null, sortTerm );
+		this.buildRows();
 	}
 
 	pullMoreRows( element ) {
 		const percentDone = element.scrollTop / (element.scrollHeight - 262 );
 		const rowCount = this.state.tableData.length;
 
-		if ( percentDone > 0.6 ) {
-			this.fetch( `20`, rowCount, null );
+		if ( percentDone > 0.9999 ) {
+			let sortCriteria = null;
+			if ( this.state.isSorted ) {
+				sortCriteria = this.state.sortCrit;
+			}
+			this.fetch( `20`, rowCount, sortCriteria );
 		}
 
 		this.setState( {
@@ -179,7 +184,7 @@ export default class ProductTable extends Component {
 	}
 
 	listenScrollEvent( e ) {
-		if( !this.state.isFetching ) { //to avoid multiple request
+		if( !this.state.isFetching ) {
 			this.setState({
 				isFetching : true,
 			});
