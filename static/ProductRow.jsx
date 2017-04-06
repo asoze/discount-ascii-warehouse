@@ -1,6 +1,12 @@
 import React, {Component} from 'react';
 
 export default class ProductRow extends Component {
+	constructor( props ) {
+		super( props );
+		this.state = {
+			displayedAds: []
+		};
+	}
 	buildFaceCell( size, face ) {
 		return (
 			<td className="face column" style={{'fontSize': size + 'px'}}>{ face }</td>
@@ -57,15 +63,34 @@ export default class ProductRow extends Component {
 		return fuzzy;
 	}
 
-	render() {
-		return (
-			<tr>
-				<td className="id column" >{ this.props.id }</td>
-				<td className="size column" >{ this.props.size }</td>
-				{ this.buildCurrencyCell( this.props.price ) }
-				{ this.buildFaceCell( this.props.size, this.props.face ) }
-				{ this.buildDateCell( this.props.date ) }
+	buildAdRow( id ) {
+		const adRow = (
+			<tr key={'idx' + id}>
+				<td colSpan="5">
+					<img className="ad" src={ "/ad/?r=" + id } />
+				</td>
 			</tr>
 		);
+		
+		return adRow;
+	}
+
+	render() {
+		let row = null;
+		if ( this.props.id === "AD" ) {
+			row = this.buildAdRow( this.props.face );
+		}
+		else {
+			row = (
+				<tr>
+					<td className="id column" >{ this.props.id }</td>
+					<td className="size column" >{ this.props.size }</td>
+					{ this.buildCurrencyCell( this.props.price ) }
+					{ this.buildFaceCell( this.props.size, this.props.face ) }
+					{ this.buildDateCell( this.props.date ) }
+				</tr>
+			);
+		}
+		return row;
 	}
 }
