@@ -55,6 +55,8 @@ export default class ProductTable extends Component {
 			url += `&skipBy=` + startAt;
 		}
 
+		console.log("URL", url );
+
 		let count = this.state.tableData.length;
 		oboe( url )
 			.done( function( elem ) {
@@ -147,11 +149,8 @@ export default class ProductTable extends Component {
 		return rows;
 	}
 
-	sortTable( criteria ) {
-		this.setState( {
-			isLoading: true
-		});
-		const key = criteria.target.innerHTML;
+	sortTable( evt ) {
+		const key = evt.target.innerHTML;
 		let sortTerm = null;
 
 		if ( key === 'Price' ) {
@@ -204,7 +203,7 @@ export default class ProductTable extends Component {
 		return (
 			<div>
 				{ loadingAnim }
-				<table>
+				<table id="headerTable">
 					<thead className="fixedHeader">
 						<tr>
 							<th className="id column" onClick={ this.sortTable }>ID</th>
@@ -216,7 +215,7 @@ export default class ProductTable extends Component {
 					</thead>
 				</table>
 
-				<table onScroll={ this.listenScrollEvent.bind(this) }>
+				<table id="bodyTable" onScroll={ this.listenScrollEvent.bind(this) }>
 					<tbody className="scrollable">
 						{this.buildRows() }
 					</tbody>
