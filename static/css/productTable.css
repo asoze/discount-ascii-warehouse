@@ -1,76 +1,52 @@
 html {
-	font-family: Arial, Helvetica, sans-serif;
-}
-
-table {
-	display:block;
-	width: 900px;
-	border-spacing: 0;
-	overflow: auto;
-}
-
-th {
-	height: 32px;
-	background-color: #777;
-	text-align: center;
-}
-
-td {
-	text-align: center;
-	border: solid 1px #ccc;
-}
-
-tbody tr {
-	height: 50px;
-}
-
-#productContainer {
-	clear: both;
-	border: 1px solid #963;
-	height: 285px;
-	overflow: auto;
-	width: 900px
-}
-
-#loading {
-	position: absolute;
-	height: 400px;
-	width: 400px;
-	top: 420px;
-	left: 350px;
-	background-image: url( '../img/loading.gif');
-	background-repeat: no-repeat;
-}
-
-tbody.scrollable {
-	display: block;
-	height: 262px;
-	overflow: auto;
-	width: 100%
-}
-
-thead.fixedHeader {
-	display: table;
-	overflow: auto;
-	width: 100%
-}
-
-.id.column {
-	width: 30%;
-}
-.size.column {
-	width: 12%;
-}
-.price.column {
-	width: 14%;
-}
-.face.column {
-	width: 20%;
-}
-.date.column {
-	width: 34%;
-}
-
-.spaceMaker {
-	height: 400px;
-}
+  font-family: Arial, Helvetica, sans-serif; }
+  html table {
+    display: block;
+    width: 900px;
+    overflow: auto; }
+    html table thead th {
+      height: 20px;
+      text-align: center; }
+    html table thead.fixedHeader {
+      display: table;
+      overflow: auto;
+      width: 100%; }
+    html table tbody tr {
+      height: 50px; }
+    html table tbody tr:nth-child(odd) {
+      background-color: #eee; }
+    html table tbody td {
+      text-align: center; }
+    html table tbody.scrollable {
+      display: block;
+      height: 262px;
+      overflow: auto;
+      width: 100%; }
+    html table .id.column {
+      width: 30%; }
+    html table .size.column {
+      width: 12%; }
+    html table .price.column {
+      width: 14%; }
+    html table .face.column {
+      width: 20%; }
+    html table .date.column {
+      width: 34%; }
+  html #headerTable {
+    border-bottom: solid 2px #000; }
+  html #productContainer {
+    clear: both;
+    height: 285px;
+    overflow: auto;
+    width: 900px; }
+  html #loading {
+    position: absolute;
+    height: 400px;
+    width: 400px;
+    top: 420px;
+    left: 350px;
+    background-image: url("../img/loading.gif");
+    background-repeat: no-repeat; }
+  html section.products {
+    margin-top: 10px;
+    margin-left: 10px; }
